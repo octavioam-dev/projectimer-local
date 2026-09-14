@@ -7,6 +7,8 @@ use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
 use dioxus::prelude::*;
 
 mod clock_window;
+pub mod hooks;
+
 use clock_window::ClockWindow;
 
 use crate::backend::db::init::init_db;

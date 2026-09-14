@@ -23,6 +23,26 @@ pub struct Project {
     pub created_at: String,
 }
 
+#[derive(sqlx::FromRow, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Tag(pub String);
+impl Tag {
+    pub fn new(str: &str) -> Self {
+        Tag(str.to_string())
+    }
+}
+impl std::ops::Deref for Tag {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl AsRef<str> for Tag {
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
 
 //region -------- Combobox Searchability --------
 // =========================================================

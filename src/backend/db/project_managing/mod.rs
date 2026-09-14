@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::backend::db::connection as db;
-use crate::backend::data::{Client, Project};
+use crate::backend::data::{Client, Project, Tag};
 
 pub async fn fetch_clients() -> Result<Vec<Client>, ServerFnError> {
     let pool = db().await?;
@@ -67,4 +67,14 @@ pub fn mark_projects_changed(client_id: i64) {
         localStorage.setItem(key, JSON.stringify([...set]));
         "#
     ));
+}
+
+pub async fn fetch_tags() -> Result<std::collections::HashSet<Tag>, ServerFnError> {
+    let pool = db().await?;
+    let tags = sqlx::query_as::<_, Tag>("SELECT tag FROM tags")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| ServerFnError::new(e.to_string()))?;
+
+    Ok(tags.into_iter().collect::<std::collections::HashSet<Tag>>())
 }

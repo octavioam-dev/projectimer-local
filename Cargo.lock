@@ -4625,6 +4625,8 @@ dependencies = [
  "serde",
  "sqlx",
  "strum",
+ "tokio",
+ "tracing",
  "tw_merge",
 ]
 

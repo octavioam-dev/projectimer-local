@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use tw_merge::tw_merge;
 use crate::ui::combobox::*;
 use crate::ui::popover::{Popover, PopoverContent, PopoverTrigger};
 use crate::ui::skeleton::Skeleton;
@@ -15,6 +16,7 @@ pub(crate) fn GenericCombobox<T>(
     data: Vec<T>,
     placeholder: String,
     selected_item: Signal<Option<T>>,
+    #[props(into, optional)] trigger_class: Option<String>,
 ) -> Element
 where
     T: ComboboxItem + Clone + PartialEq + 'static,
@@ -25,7 +27,8 @@ where
 
     rsx! {
         Popover {
-            PopoverTrigger { class: "justify-between w-[200px]",
+            PopoverTrigger {
+                class: tw_merge!("justify-between w-[200px]", trigger_class.as_deref().unwrap_or("")),
                 span { class: "truncate",
                     "{current_label}"
                 }

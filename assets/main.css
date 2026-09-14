@@ -1,44 +1,47 @@
-/* App-wide styling */
-body {
-    background-color: #ffffff;
-    color: #000000;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 20px;
+/* Overrides the default shadcn theme with a dark, warm-accent palette.
+   Loaded after tailwind.css — unlayered custom properties win over
+   anything declared inside @layer theme/base/components/utilities. */
+
+:root {
+    --radius: 0.75rem;
+
+    --background: #0B0D12;
+    --foreground: #EDEFF3;
+
+    --card: #14161C;
+    --card-foreground: #EDEFF3;
+
+    --popover: #14161C;
+    --popover-foreground: #EDEFF3;
+
+    --primary: #F2A93B;
+    --primary-foreground: #171310;
+
+    --secondary: #1C1F27;
+    --secondary-foreground: #EDEFF3;
+
+    --muted: #1A1D24;
+    --muted-foreground: #8B93A5;
+
+    --accent: #1C1F27;
+    --accent-foreground: #EDEFF3;
+
+    --border: #232733;
+    --input: #232733;
+    --ring: #F2A93B;
+
+    --destructive: oklch(0.704 0.191 22.216);
+    --destructive-foreground: #EDEFF3;
+    --warning: oklch(0.473 0.137 46.201);
+    --warning-foreground: #EDEFF3;
+    --success: oklch(0.432 0.095 166.913);
+    --success-foreground: #EDEFF3;
 }
 
-/*
-!* Echo *!
-#echo {
-    width: 360px;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 50px;
-    background-color: #1e222d;
-    padding: 20px;
-    border-radius: 10px;
+html, body {
+    margin: 0;
+    padding: 0;
+    /*overflow: hidden;*/
+    height: 100%;
+    background-color: var(--background);
 }
-
-#echo>h4 {
-    margin: 0px 0px 15px 0px;
-}
-
-
-#echo>input {
-    border: none;
-    border-bottom: 1px white solid;
-    background-color: transparent;
-    color: #ffffff;
-    transition: border-bottom-color 0.2s ease;
-    outline: none;
-    display: block;
-    padding: 0px 0px 5px 0px;
-    width: 100%;
-}
-
-#echo>input:focus {
-    border-bottom-color: #6d85c6;
-}
-
-#echo>p {
-    margin: 20px 0px 0px auto;
-}*/
