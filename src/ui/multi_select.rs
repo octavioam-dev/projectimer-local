@@ -350,7 +350,7 @@ pub fn MultiSelectContent(children: Element, #[props(into, optional)] class: Opt
             "data-align": "{align_str}",
             style: "pointer-events: none;",
             onscroll: on_scroll,
-            // ...unchanged
+            {children}
         }
         script { dangerous_inner_html: "{script}" }
     }

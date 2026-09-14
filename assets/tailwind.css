@@ -203,9 +203,6 @@
   .top-\[50\%\] {
     top: 50%;
   }
-  .top-\[calc\(100\%\+4px\)\] {
-    top: calc(100% + 4px);
-  }
   .bottom-\[calc\(100\%\+4px\)\] {
     bottom: calc(100% + 4px);
   }
@@ -347,9 +344,6 @@
   }
   .origin-bottom {
     transform-origin: bottom;
-  }
-  .origin-top {
-    transform-origin: top;
   }
   .translate-x-\[-50\%\] {
     --tw-translate-x: -50%;
@@ -956,21 +950,6 @@
   .data-\[selected\=true\]\:text-accent-foreground {
     &[data-selected="true"] {
       color: var(--accent-foreground);
-    }
-  }
-  .data-\[side\=top\]\:top-auto {
-    &[data-side="top"] {
-      top: auto;
-    }
-  }
-  .data-\[side\=top\]\:bottom-\[calc\(100\%\+4px\)\] {
-    &[data-side="top"] {
-      bottom: calc(100% + 4px);
-    }
-  }
-  .data-\[side\=top\]\:origin-bottom {
-    &[data-side="top"] {
-      transform-origin: bottom;
     }
   }
   .data-\[state\=closed\]\:scale-95 {
