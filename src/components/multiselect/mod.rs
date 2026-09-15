@@ -12,6 +12,7 @@ pub fn GenericMultiSelect<T>(
     list: HashSet<T>,
     placeholder: String,
     mut selected: Signal<HashSet<T>>,
+    #[props(default = false)] disabled: bool,
 ) -> Element
 where
     T: AsRef<str> + Clone + PartialEq + Eq + Hash + 'static,
@@ -59,7 +60,7 @@ where
     rsx! {
         div { class: "mx-auto",
             MultiSelect { values: internal_values,
-                MultiSelectTrigger { class: "w-[250px]",
+                MultiSelectTrigger { class: "w-[250px]", disabled,
                     MultiSelectValue { placeholder: placeholder.clone(), selected: selected() }
                 }
                 MultiSelectContent {

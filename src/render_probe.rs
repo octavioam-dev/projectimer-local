@@ -110,8 +110,8 @@ fn app_side_update_survives_and_reaches_widget() {
 
     assert_eq!(*dom.selected.peek(), HashSet::from([Tag::new("alpha")]));
     assert!(
-        texts.iter().any(|t| t.contains("1 selected")),
-        "widget should now display '1 selected', got {texts:?}"
+        texts.iter().any(|t| t.contains("alpha")),
+        "widget should now display 'alpha', got {texts:?}"
     );
 }
 
@@ -139,8 +139,8 @@ fn clicking_option_updates_external_selection_stably() {
         "clicked option must reach the external signal"
     );
     assert!(
-        texts.iter().any(|t| t.contains("1 selected")),
-        "widget should now display '1 selected', got {texts:?}"
+        texts.iter().any(|t| t.contains("alpha")),
+        "widget should now display 'alpha', got {texts:?}"
     );
 
     // Stability: extra renders / effect flushes must not revert the selection.

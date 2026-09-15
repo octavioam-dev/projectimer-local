@@ -17,6 +17,7 @@ pub(crate) fn GenericCombobox<T>(
     placeholder: String,
     selected_item: Signal<Option<T>>,
     #[props(into, optional)] trigger_class: Option<String>,
+    #[props(default = false)] disabled: bool,
 ) -> Element
 where
     T: ComboboxItem + Clone + PartialEq + 'static,
@@ -29,6 +30,7 @@ where
         Popover {
             PopoverTrigger {
                 class: tw_merge!("justify-between w-[200px]", trigger_class.as_deref().unwrap_or("")),
+                disabled,
                 span { class: "truncate",
                     "{current_label}"
                 }

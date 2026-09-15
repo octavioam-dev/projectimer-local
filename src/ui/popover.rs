@@ -78,9 +78,13 @@ pub fn Popover(#[props(default = PopoverAlign::Center)] align: PopoverAlign, chi
             if (trigger.hasAttribute('data-popover-init')) return;
             trigger.setAttribute('data-popover-init', 'true');
             const close = () => content.setAttribute('data-state', 'closed');
+            // Only one selector popover (client / project / tags) may be open at a time.
+            document.addEventListener('projectimer:close-selectors', close);
             trigger.addEventListener('click', e => {{
                 e.stopPropagation();
+                if (trigger.disabled) return;
                 const isOpen = content.getAttribute('data-state') === 'open';
+                document.dispatchEvent(new Event('projectimer:close-selectors'));
                 content.setAttribute('data-state', isOpen ? 'closed' : 'open');
             }});
             document.addEventListener('click', e => {{

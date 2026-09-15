@@ -72,6 +72,12 @@ pub fn ClockWindow() -> Element {
         }
     });
 
+    // Changing the project (which also happens when the client changes) resets the tag picks.
+    use_effect(move || {
+        selected_project();
+        selected_tags.set(HashSet::new());
+    });
+
     use_future(move || async move {
         let mut eval = document::eval(
             // language=JavaScript
@@ -301,6 +307,7 @@ pub fn ClockWindow() -> Element {
                     placeholder: "Project".to_string(),
                     selected_item: selected_project,
                     trigger_class: "flex-1 min-w-0",
+                    disabled: selected_client().is_none(),
                 }
             }
             div { class: "flex gap-2 w-full",
@@ -308,6 +315,7 @@ pub fn ClockWindow() -> Element {
                     list: tags,
                     placeholder: "Select tags".to_string(),
                     selected: selected_tags,
+                    disabled: selected_project().is_none(),
                 }
             }
         }

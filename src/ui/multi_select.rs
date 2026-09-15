@@ -209,6 +209,7 @@ pub fn MultiSelectTrigger(
     children: Element,
     #[props(into, optional)] class: Option<String>,
     #[props(into, optional)] id: Option<String>,
+    #[props(default = false)] disabled: bool,
 ) -> Element {
     let multi_select_ctx = use_context::<MultiSelectContext>();
 
@@ -238,6 +239,7 @@ pub fn MultiSelectTrigger(
             class: "{button_class}",
             id: "{button_id}",
             tabindex: "0",
+            disabled,
             "data-multi-select-trigger": "{multi_select_ctx.target_id}",
             {children}
             ChevronDown { class: "text-muted-foreground" }
@@ -324,11 +326,16 @@ pub fn MultiSelectContent(children: Element, #[props(into, optional)] class: Opt
                     }}
                 }};
 
+                // Only one selector popover (client / project / tags) may be open at a time.
+                document.addEventListener('projectimer:close-selectors', closeMultiSelect);
+
                 trigger.addEventListener('click', (e) => {{
                     e.stopPropagation();
+                    if (trigger.disabled) return;
                     if (isOpen) {{
                         closeMultiSelect();
                     }} else {{
+                        document.dispatchEvent(new Event('projectimer:close-selectors'));
                         openMultiSelect();
                     }}
                 }});

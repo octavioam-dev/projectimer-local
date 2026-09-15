@@ -4,7 +4,6 @@ A Local, Open-Source app to track development time for more accurate client bill
 
 ## TODO:
 
-* [ ] Only one popover input on clockwindow open at a time
 * [ ] No editing inputs while clock is running
 * [ ] No refreshing clients/projects/tags while clock is running
 * [ ] Add Manager Window and the button to open it from clockwindow
@@ -14,13 +13,15 @@ A Local, Open-Source app to track development time for more accurate client bill
 
 ### Version 0.0
 
-* 0.0.0
+* 0.0.0 -
 
 * [x] Initial Commit
 
-* 0.0.4
+* 0.0.4 -
 
 * [x] README Update and tags popover fix
+
+* [x] Only one popover input on clockwindow open at a time
 
 ## Future Features
 
