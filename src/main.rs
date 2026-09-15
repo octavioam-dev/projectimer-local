@@ -2,6 +2,8 @@ mod components;
 //dx serve
 mod backend;
 mod ui;
+#[cfg(test)]
+mod render_probe;
 #[cfg(feature = "desktop")]
 use dioxus::desktop::{Config, LogicalSize, WindowBuilder};
 use dioxus::prelude::*;

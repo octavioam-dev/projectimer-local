@@ -24,7 +24,9 @@ where
         move || initial.clone()
     });
 
-    // Widget -> external
+    // Widget -> external: push widget state into `selected`, pruned to the available list.
+    // Only tracked on `internal_values` so a click converges deterministically instead of racing
+    // with app-side writes to `selected`.
     let list_for_effect = list.clone();
     use_effect(move || {
         let values = internal_values();
@@ -33,18 +35,19 @@ where
             .filter(|item| values.contains(item.as_ref()))
             .cloned()
             .collect();
-        if matched != selected() {
+        if matched != *selected.peek() {
             selected.set(matched);
         }
     });
 
-    // External -> widget
+    // External -> widget: push app state into the widget.
+    // Only tracked on `selected` (reads of `internal_values` are peeked/untracked).
     use_effect(move || {
         let ext_strings: HashSet<String> = selected()
             .iter()
             .map(|item| item.as_ref().to_string())
             .collect();
-        if ext_strings != internal_values() {
+        if ext_strings != *internal_values.peek() {
             internal_values.set(ext_strings);
         }
     });

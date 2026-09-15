@@ -45,9 +45,17 @@ pub fn ClockWindow() -> Element {
         fetch_tags().await.unwrap_or_default()
     });
 
+    let mut tags_cache = use_signal(|| HashSet::<Tag>::new());
+    use_effect(move || {
+        if let Some(tags) = tags_resource.value().read().clone() {
+            tags_cache.set(tags);
+        }
+    });
+
     let clients = clients_resource.value().read().clone().unwrap_or_default();
     let projects = projects_resource.value().read().clone().unwrap_or_default();
-    let tags: HashSet<Tag> = tags_resource.value().read().clone().unwrap_or_default();
+    let tags: HashSet<Tag> = tags_cache();
+
     tracing::info!("tags count: {}", tags.len());
 
     use_effect(move || {
@@ -136,11 +144,10 @@ pub fn ClockWindow() -> Element {
         }
     });
     use_effect(move || {
-        let available = tags_resource.value().read().clone().unwrap_or_default();
         let current = selected_tags();
         let retained: HashSet<Tag> = current
             .into_iter()
-            .filter(|t| available.contains(t))
+            .filter(|t| tags_cache().contains(t))
             .collect();
         if retained != selected_tags() {
             selected_tags.set(retained);
