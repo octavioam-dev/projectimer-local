@@ -690,6 +690,9 @@
   .\[scrollbar-width\:none\] {
     scrollbar-width: none;
   }
+  .running {
+    animation-play-state: running;
+  }
   .group-aria-selected\:block {
     &:is(:where(.group)[aria-selected="true"] *) {
       display: block;

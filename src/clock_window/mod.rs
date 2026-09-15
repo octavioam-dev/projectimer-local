@@ -56,7 +56,7 @@ pub fn ClockWindow() -> Element {
     let projects = projects_resource.value().read().clone().unwrap_or_default();
     let tags: HashSet<Tag> = tags_cache();
 
-    tracing::info!("tags count: {}", tags.len());
+    //tracing::info!("tags count: {}", tags.len());
 
     use_effect(move || {
         selected_client();

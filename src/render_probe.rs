@@ -47,13 +47,18 @@ fn take_selected() -> Signal<HashSet<Tag>> {
 struct Dom {
     dom: VirtualDom,
     selected: Signal<HashSet<Tag>>,
+    alpha_option: ElementId,
 }
 
 fn mount() -> Dom {
     let mut dom = VirtualDom::new(probe);
-    dom.rebuild_to_vec();
+    let initial = dom.rebuild_to_vec();
     let selected = take_selected();
-    let mut dom = Dom { dom, selected };
+    let mut dom = Dom {
+        dom,
+        selected,
+        alpha_option: first_option_id(&initial).expect("alpha option rendered"),
+    };
     // Let the mount-time effects run so subscriptions are established before the test acts.
     dom.flush(4);
     dom
@@ -74,32 +79,23 @@ impl Dom {
         }
         texts
     }
+}
 
-    /// Element id of the option button whose rendered text equals `label`.
-    fn option_button_id(&mut self, label: &str) -> Option<ElementId> {
-        let initial = self.dom.rebuild_to_vec();
-        // Buttons appear in sorted order; find the one whose text we're after via the id that the
-        // CreateTextNode for `label` shares with its sibling button in template order. Since the
-        // template emits CreateTextNode with the *text* id (not the button id), instead resolve by
-        // the SetAttribute "role"=option order and match against the CreateTextNode sequence.
-        let mut role_ids = Vec::new();
-        let mut text_labels = Vec::new();
-        for m in &initial.edits {
-            match m {
-                Mutation::SetAttribute {
-                    name: "role",
-                    value: dioxus::core::AttributeValue::Text(v),
-                    id,
-                    ns: _,
-                } if v == "option" => role_ids.push(*id),
-                Mutation::CreateTextNode { value, .. } => text_labels.push(value.clone()),
-                _ => {}
-            }
-        }
-        // `label`'s position among created text nodes matches `role` position among options.
-        let label_pos = text_labels.iter().position(|t| t == label)?;
-        role_ids.get(label_pos).copied()
-    }
+/// Element id of the FIRST option button (deterministically "alpha": options are emitted in
+/// sorted order and `role="option"` is a static attribute baked into a template, never an edit;
+/// the dynamic `aria-selected` SetAttribute whose element IS the button is what identifies it).
+fn first_option_id(initial: &Mutations) -> Option<ElementId> {
+    initial
+        .edits
+        .iter()
+        .find_map(|m| match m {
+            Mutation::SetAttribute {
+                name: "aria-selected",
+                id,
+                ..
+            } => Some(*id),
+            _ => None,
+        })
 }
 
 /// The app refetches tags on window focus and prunes selections that no longer exist. That write
@@ -126,7 +122,7 @@ fn clicking_option_updates_external_selection_stably() {
     dioxus::html::set_event_converter(Box::new(SerializedHtmlEventConverter));
 
     let mut dom = mount();
-    let alpha_button = dom.option_button_id("alpha").expect("alpha option rendered");
+    let alpha_button = dom.alpha_option;
 
     let event = dioxus::core::Event::new(
         Rc::new(dioxus::html::PlatformEventData::new(Box::new(
