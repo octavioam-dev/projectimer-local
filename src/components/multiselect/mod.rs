@@ -6,7 +6,7 @@ use crate::ui::multi_select::{
     MultiSelectValue,
 };
 
-/// Bi-directional, updates when the signal itself updates
+/// Bidirectional, updates when the signal itself updates
 #[component]
 pub fn GenericMultiSelect<T>(
     list: HashSet<T>,
@@ -60,7 +60,7 @@ where
         div { class: "mx-auto",
             MultiSelect { values: internal_values,
                 MultiSelectTrigger { class: "w-[250px]",
-                    MultiSelectValue { placeholder: placeholder.clone() }
+                    MultiSelectValue { placeholder: placeholder.clone(), selected: selected() }
                 }
                 MultiSelectContent {
                     MultiSelectGroup {

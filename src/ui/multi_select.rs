@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-
+use std::hash::Hash;
 use dioxus::prelude::*;
 use icons::{Check, ChevronDown, ChevronUp};
 use tw_merge::tw_merge;
@@ -88,9 +88,15 @@ pub fn MultiSelectItem(#[props(into, optional)] class: Option<String>, children:
 /* ========================================================== */
 /*                     ✨ VALUE ✨                            */
 /* ========================================================== */
-
+/// Altered to show the items selected inside the selector, by me
 #[component]
-pub fn MultiSelectValue(#[props(into, optional)] placeholder: Option<String>) -> Element {
+pub fn MultiSelectValue<T>(
+    selected: HashSet<T>,
+    #[props(into, optional)] placeholder: Option<String>
+) -> Element
+where
+    T: AsRef<str> + Clone + PartialEq + Eq + Hash + 'static,
+{
     let multi_select_ctx = use_context::<MultiSelectContext>();
 
     rsx! {
@@ -100,8 +106,12 @@ pub fn MultiSelectValue(#[props(into, optional)] placeholder: Option<String>) ->
                 if values.is_empty() {
                     placeholder.clone().unwrap_or_default()
                 } else {
-                    let count = values.len();
-                    if count == 1 { "1 selected".to_string() } else { format!("{count} selected") }
+                    let mut selected = selected
+                        .iter()
+                        .map(|item| item.as_ref())
+                        .collect::<Vec<&str>>();
+                    selected.sort();
+                    selected.join(", ")
                 }
             }
         }

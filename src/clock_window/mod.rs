@@ -74,6 +74,7 @@ pub fn ClockWindow() -> Element {
 
     use_future(move || async move {
         let mut eval = document::eval(
+            // language=JavaScript
             r#"
             (function() {
                 const CLIENTS_KEY = 'clients_changed';
