@@ -1,13 +1,15 @@
 use dioxus::prelude::*;
 use std::collections::HashSet;
 use std::time::Duration;
-use dioxus::logger::tracing;
+//use dioxus::logger::tracing;
 use crate::components::combobox::GenericCombobox;
 use crate::backend::data::{Client, Project, Tag};
 use crate::backend::db::project_managing::{fetch_clients, fetch_projects_by_client, fetch_tags};
 use crate::ui::multi_select::{MultiSelect, MultiSelectContent, MultiSelectGroup, MultiSelectItem, MultiSelectOption, MultiSelectTrigger, MultiSelectValue, };
 use crate::backend::helpers::project_flag_set_for_client;
 use crate::components::multiselect::GenericMultiSelect;
+use crate::ui::button::Button;
+use crate::constants::CLOCK_WINDOW_DIMENSIONS;
 
 const TIMER_ACCENT: &str = "#F2A93B";
 const LAP_SECONDS: u64 = 1800;
@@ -26,6 +28,8 @@ fn format_elapsed(total_seconds: u64) -> String {
 
 #[component]
 pub fn ClockWindow() -> Element {
+    let mut count = use_signal(|| 0);
+
     let mut selected_client: Signal<Option<Client>> = use_signal(|| None);
     let mut selected_project: Signal<Option<Project>> = use_signal(|| None);
     let mut selected_tags: Signal<HashSet<Tag>> = use_signal(HashSet::new);
@@ -187,16 +191,9 @@ pub fn ClockWindow() -> Element {
         }
     };
 
-    let status_text = if is_disabled {
-        "Select a client and project"
-    } else if is_running() {
-        "Tracking time"
-    } else {
-        "Ready to start"
-    };
-
     // --- Ring + tick geometry ---
-    let radius = 78.0_f64;
+    let box_radius = 100f64;
+    let radius = 0.92*box_radius;
     let circumference = 2.0 * std::f64::consts::PI * radius;
     let laps_completed = (elapsed_seconds() / LAP_SECONDS).min(TOTAL_TICKS);
     let progress_fraction = (elapsed_seconds() % LAP_SECONDS) as f64 / LAP_SECONDS as f64;
@@ -207,9 +204,9 @@ pub fn ClockWindow() -> Element {
         .map(|i| {
             let angle_deg = i as f64 * (360.0 / TOTAL_TICKS as f64);
             let angle_rad = (angle_deg - 90.0).to_radians();
-            let tick_radius = 69.0;
-            let x = 90.0 + tick_radius * angle_rad.cos();
-            let y = 90.0 + tick_radius * angle_rad.sin();
+            let tick_radius = 0.82*radius;
+            let x = box_radius + tick_radius * angle_rad.cos();
+            let y = box_radius + tick_radius * angle_rad.sin();
             (x, y, i < laps_completed)
         })
         .collect();
@@ -233,27 +230,27 @@ pub fn ClockWindow() -> Element {
     };
 
     rsx! {
-        div { class: "flex flex-col w-[300px] h-[450px] bg-background px-6 py-7 gap-3",
+        div { class: "flex flex-col w-[{CLOCK_WINDOW_DIMENSIONS.width}px] h-[{CLOCK_WINDOW_DIMENSIONS.height}px] bg-background px-6 py-7 gap-3 overflow-hidden",
 
             h1 { class: "text-lg font-semibold text-foreground text-center tracking-tight",
                 "ProjecTimer"
             }
 
             div { class: "flex-1 flex flex-col items-center justify-center gap-3",
-                div { class: "relative", style: "width: 180px; height: 180px;",
+                div { class: "relative", style: "width: {2.*box_radius}px; height: {2.*box_radius}px;",
                     svg {
-                        width: "180",
-                        height: "180",
-                        view_box: "0 0 180 180",
+                        width: "{2.*box_radius}",
+                        height: "{2.*box_radius}",
+                        view_box: "0 0 {2.*box_radius} {2.*box_radius}",
 
                         circle {
-                            cx: "90", cy: "90", r: "{radius}",
+                            cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
                             fill: "none",
                             stroke: "{track_color}",
                             stroke_width: "6",
                         }
                         circle {
-                            cx: "90", cy: "90", r: "{radius}",
+                            cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
                             fill: "none",
                             stroke: "{TIMER_ACCENT}",
                             stroke_width: "6",
@@ -289,10 +286,6 @@ pub fn ClockWindow() -> Element {
                         }
                     }
                 }
-
-                p { class: "text-xs text-muted-foreground",
-                    "{status_text}"
-                }
             }
 
             div { class: "flex gap-2 w-full",
@@ -317,6 +310,9 @@ pub fn ClockWindow() -> Element {
                     selected: selected_tags,
                     disabled: selected_project().is_none(),
                 }
+            }
+            div { class: "flex gap-2 w-full justify-end",
+                Button { onclick: move |_| count += 1, "Open Manager" }
             }
         }
     }

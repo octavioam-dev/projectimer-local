@@ -291,9 +291,6 @@
   .h-10 {
     height: calc(var(--spacing) * 10);
   }
-  .h-\[450px\] {
-    height: 450px;
-  }
   .h-fit {
     height: fit-content;
   }
@@ -320,9 +317,6 @@
   }
   .w-\[250px\] {
     width: 250px;
-  }
-  .w-\[300px\] {
-    width: 300px;
   }
   .w-fit {
     width: fit-content;
@@ -385,6 +379,9 @@
   }
   .justify-center {
     justify-content: center;
+  }
+  .justify-end {
+    justify-content: flex-end;
   }
   .gap-2 {
     gap: calc(var(--spacing) * 2);

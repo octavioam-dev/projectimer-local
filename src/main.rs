@@ -10,9 +10,11 @@ use dioxus::prelude::*;
 
 mod clock_window;
 pub mod hooks;
+pub mod constants;
 
 use clock_window::ClockWindow;
 
+use crate::constants::CLOCK_WINDOW_DIMENSIONS;
 use crate::backend::db::init::init_db;
 
 #[derive(Debug, Clone, Routable, PartialEq)]
@@ -37,7 +39,7 @@ fn main() {
         let config = Config::new().with_window(
             WindowBuilder::new()
                 .with_title("ProjecTimer")
-                .with_inner_size(LogicalSize::new(300.0, 450.0)),
+                .with_inner_size(LogicalSize::new(CLOCK_WINDOW_DIMENSIONS.width, CLOCK_WINDOW_DIMENSIONS.height)),
         );
         dioxus::LaunchBuilder::desktop()
             .with_cfg(config)
