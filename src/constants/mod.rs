@@ -1,7 +1,7 @@
 // =================================================================================
 //                                   APP CONSTANTS
 // =================================================================================
-pub const CLOCK_WINDOW_DIMENSIONS: Dimensions = Dimensions {width: 300f64, height: 400f64};
+pub const CLOCK_WINDOW_DIMENSIONS: Dimensions = Dimensions {width: 300f64, height: 430f64};
 
 
 
