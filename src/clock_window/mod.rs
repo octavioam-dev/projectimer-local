@@ -144,6 +144,8 @@ pub fn ClockWindow() -> Element {
         selected_tags.set(HashSet::new());
     });
 
+    let mut is_running = use_signal(|| false);
+
     use_future(move || async move {
         let mut eval = document::eval(
             // language=JavaScript
@@ -180,12 +182,16 @@ pub fn ClockWindow() -> Element {
             match eval.recv::<String>().await {
                 Ok(msg) => match msg.as_str() {
                     "clients" => {
-                        clients_resource.restart();
+                        if !is_running() {
+                            clients_resource.restart();
+                        }
                     }
                     "focus" => {
-                        if let Some(client) = selected_client() {
-                            if project_flag_set_for_client(client.id).await {
-                                projects_resource.restart();
+                        if !is_running() {
+                            if let Some(client) = selected_client() {
+                                if project_flag_set_for_client(client.id).await {
+                                    projects_resource.restart();
+                                }
                             }
                         }
                     }
@@ -210,7 +216,9 @@ pub fn ClockWindow() -> Element {
         loop {
             match eval.recv::<String>().await {
                 Ok(_) => {
-                    tags_resource.restart();
+                    if !is_running() {
+                        tags_resource.restart();
+                    }
                 }
                 Err(_) => break,
             }
@@ -231,7 +239,6 @@ pub fn ClockWindow() -> Element {
     //                             CLOCK LOGIC
     // ---------------------------------------------------------------------------
 
-    let mut is_running = use_signal(|| false);
     let mut elapsed_seconds = use_signal(|| 0u64);
 
     use_future(move || async move {

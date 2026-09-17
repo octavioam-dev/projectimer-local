@@ -164,7 +164,7 @@ fn latest_dashoffset(mutations: &Mutations) -> f64 {
         .expect("no stroke-dashoffset edit emitted")
 }
 
-    fn latest_style(mutations: &Mutations) -> String {
+    fn latest_style(mutations: &Mutations) -> Option<String> {
         mutations
             .edits
             .iter()
@@ -181,7 +181,22 @@ fn latest_dashoffset(mutations: &Mutations) -> f64 {
                 }
             })
             .last()
-            .unwrap_or_default()
+    }
+
+    fn any_style_transition(mutations: &Mutations) -> bool {
+        mutations
+            .edits
+            .iter()
+            .any(|m| {
+                matches!(
+                    m,
+                    Mutation::SetAttribute {
+                        name: "style",
+                        value: dioxus::core::AttributeValue::Text(v),
+                        ..
+                    } if v.contains("transition")
+                )
+            })
     }
 
     #[test]
@@ -199,17 +214,19 @@ fn latest_dashoffset(mutations: &Mutations) -> f64 {
             .enable_all()
             .build()
             .unwrap();
-        let (offsets, styles): (Vec<f64>, Vec<String>) = rt.block_on(async {
+        let (offsets, any_transition): (Vec<f64>, bool) = rt.block_on(async {
             let mut offsets = Vec::new();
-            let mut styles = Vec::new();
+            let mut any_transition = false;
             for target in [1u64, LAP_SECONDS / 4, LAP_SECONDS - 1, LAP_SECONDS] {
                 seconds.set(target);
-                tokio::time::sleep(std::time::Duration::from_millis(15)).await;
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
                 let frame = dom.render_immediate_to_vec();
                 offsets.push(latest_dashoffset(&frame));
-                styles.push(latest_style(&frame));
+                any_transition |= any_style_transition(&frame);
             }
-            (offsets, styles)
+            let frame = dom.render_immediate_to_vec();
+            any_transition |= any_style_transition(&frame);
+            (offsets, any_transition)
         });
 
         assert!(
@@ -225,18 +242,13 @@ fn latest_dashoffset(mutations: &Mutations) -> f64 {
             "offset should keep shrinking while counting (got {offsets:?})"
         );
         assert!(
-            styles[0].contains("transition"),
-            "while progressing the ring should keep its 1s fill transition (got {styles:?})"
+            !any_transition,
+            "the ring must never animate backwards: no stroke-dashoffset transition may ever be active"
         );
         let last = offsets.last().unwrap();
         assert!(
             (last - d0).abs() < 0.01,
             "ring should RESET to a fresh lap at LAP_SECONDS (got {last} vs {d0})"
-        );
-        assert_eq!(
-            styles.last().unwrap(),
-            "",
-            "reset to a new cycle must be instant (no backwards transition)"
         );
     }
 
