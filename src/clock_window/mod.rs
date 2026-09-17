@@ -9,90 +9,40 @@ use crate::ui::multi_select::{MultiSelect, MultiSelectContent, MultiSelectGroup,
 use crate::backend::helpers::project_flag_set_for_client;
 use crate::components::multiselect::GenericMultiSelect;
 use crate::ui::button::Button;
-use crate::constants::CLOCK_WINDOW_DIMENSIONS;
+use crate::constants::{CLOCK_WINDOW_DIMENSIONS, MANAGER_WINDOW_DIMENSIONS, TIMER_ACCENT};
+#[cfg(feature = "desktop")]
+use dioxus::desktop::{Config, LogicalSize, WindowBuilder, WindowCloseBehaviour};
+use crate::ManagerWindowRoot;
+use crate::components::progress_ring::{ProgressRing, format_elapsed};
 
-const TIMER_ACCENT: &str = "#F2A93B";
+
 pub(crate) const LAP_SECONDS: u64 = 1800;
-const TOTAL_TICKS: u64 = 12;
-
-fn format_elapsed(total_seconds: u64) -> String {
-    let h = total_seconds / 3600;
-    let m = (total_seconds % 3600) / 60;
-    let s = total_seconds % 60;
-    if h > 0 {
-        format!("{h:02}:{m:02}:{s:02}")
-    } else {
-        format!("{m:02}:{s:02}")
-    }
-}
-
-#[component]
-pub fn ProgressRing(elapsed_seconds: ReadSignal<u64>) -> Element {
-    let elapsed_seconds = elapsed_seconds();
-
-    let box_radius = 100f64;
-    let radius = 0.92 * box_radius;
-    let circumference = 2.0 * std::f64::consts::PI * radius;
-    let laps_completed = (elapsed_seconds / LAP_SECONDS).min(TOTAL_TICKS);
-    let progress_fraction = (elapsed_seconds % LAP_SECONDS) as f64 / LAP_SECONDS as f64;
-    //if progress_fraction == 0.0 && elapsed_seconds != 0 {progress_fraction = 1.0};
-    let dash_offset = circumference * (1.0 - progress_fraction);
-    let track_color = "var(--color-border)";
-    //let animates = elapsed_seconds % LAP_SECONDS != 0;
-
-    let tick_positions: Vec<(f64, f64, bool)> = (0..TOTAL_TICKS)
-        .map(|i| {
-            let angle_deg = i as f64 * (360.0 / TOTAL_TICKS as f64);
-            let angle_rad = (angle_deg - 90.0).to_radians();
-            let tick_radius = 0.83 * radius;
-            let x = box_radius + tick_radius * angle_rad.cos();
-            let y = box_radius + tick_radius * angle_rad.sin();
-            (x, y, i < laps_completed)
-        })
-        .collect();
-
-    rsx! {
-        svg {
-            width: "{2.*box_radius}",
-            height: "{2.*box_radius}",
-            view_box: "0 0 {2.*box_radius} {2.*box_radius}",
-
-            circle {
-                cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
-                fill: "none",
-                stroke: "{track_color}",
-                stroke_width: "6",
-            }
-            circle {
-                cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
-                fill: "none",
-                stroke: "{TIMER_ACCENT}",
-                stroke_width: "6",
-                stroke_linecap: "round",
-                stroke_dasharray: "{circumference}",
-                stroke_dashoffset: "{dash_offset}",
-                transform: "rotate(-90 {box_radius} {box_radius})",
-                style: "" //"transition: stroke-dashoffset 1s linear;"
-            }
-            for (x, y, lit) in tick_positions.iter() {
-                circle {
-                    cx: "{x}", cy: "{y}", r: "3.5",
-                    fill: if *lit { TIMER_ACCENT } else { track_color },
-                }
-            }
-        }
-    }
-}
 
 #[component]
 pub fn ClockWindow() -> Element {
-    let mut count = use_signal(|| 0);
+    // ---------------------------------------------------------------------------
+    //                          OPEN MANAGER WINDOW
+    // ---------------------------------------------------------------------------
+    #[cfg(feature = "desktop")]
+    let open_manager = move |_| {
+        let config = Config::new()
+            .with_window(
+                WindowBuilder::new()
+                    .with_title("Time Manager")
+                    .with_inner_size(LogicalSize::new(MANAGER_WINDOW_DIMENSIONS.width, MANAGER_WINDOW_DIMENSIONS.height)),
+            )
+            .with_close_behaviour(WindowCloseBehaviour::WindowCloses);
+
+        dioxus::desktop::window().new_window(VirtualDom::new(ManagerWindowRoot), config);
+    };
+    #[cfg(not(feature = "desktop"))]
+    let open_manager = move |_| {};
 
     // ---------------------------------------------------------------------------
     //                          CLIENTS AND PROJECTS
     // ---------------------------------------------------------------------------
 
-    let mut selected_client: Signal<Option<Client>> = use_signal(|| None);
+    let selected_client: Signal<Option<Client>> = use_signal(|| None);
     let mut selected_project: Signal<Option<Project>> = use_signal(|| None);
     let mut selected_tags: Signal<HashSet<Tag>> = use_signal(HashSet::new);
 
@@ -285,7 +235,6 @@ pub fn ClockWindow() -> Element {
     // ---------------------------------------------------------------------------
     //                                 UI STACK
     // ---------------------------------------------------------------------------
-
     rsx! {
         div { class: "flex flex-col w-[{CLOCK_WINDOW_DIMENSIONS.width}px] h-[{CLOCK_WINDOW_DIMENSIONS.height}px] bg-background px-6 py-6 gap-3 overflow-hidden",
 
@@ -342,7 +291,7 @@ pub fn ClockWindow() -> Element {
                 }
             }
             div { class: "flex gap-2 w-full justify-end",
-                Button { onclick: move |_| count += 1, "Open Manager" }
+                Button { onclick: open_manager, "Open Manager" }
             }
         }
     }

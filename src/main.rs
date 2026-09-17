@@ -11,8 +11,10 @@ use dioxus::prelude::*;
 mod clock_window;
 pub mod hooks;
 pub mod constants;
+pub mod manager_window;
 
 use clock_window::ClockWindow;
+use manager_window::ManagerWindow;
 
 use crate::constants::CLOCK_WINDOW_DIMENSIONS;
 use crate::backend::db::init::init_db;
@@ -38,19 +40,19 @@ fn main() {
     {
         let config = Config::new().with_window(
             WindowBuilder::new()
-                .with_title("ProjecTimer")
+                .with_title("Tracker")
                 .with_inner_size(LogicalSize::new(CLOCK_WINDOW_DIMENSIONS.width, CLOCK_WINDOW_DIMENSIONS.height)),
         );
         dioxus::LaunchBuilder::desktop()
             .with_cfg(config)
-            .launch(App);
+            .launch(ClockWindowRoot);
     }
     #[cfg(not(feature = "desktop"))]
-    dioxus::launch(App);
+    dioxus::launch(ClockWindowRoot);
 }
 
 #[component]
-fn App() -> Element {
+fn ClockWindowRoot() -> Element {
     use_effect(move || {
         spawn(async move {
             if let Err(e) = init_db().await {
@@ -61,19 +63,26 @@ fn App() -> Element {
 
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS } document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         document::Link { rel: "stylesheet", href: DX_THEME_CSS }
         Router::<Route> {}
     }
 }
 
-/// Home page
+/// Root component for the separately-spawned home/manage window
+/// (created via the "Open Manager" button in [`ClockWindow`]).
 #[component]
-fn Home() -> Element {
+pub(crate) fn ManagerWindowRoot() -> Element {
     rsx! {
-        "Home"
+        document::Link { rel: "icon", href: FAVICON }
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "stylesheet", href: DX_THEME_CSS }
+        ManagerWindow {}
     }
 }
+
 
 /*/// Shared navbar component.
 #[component]

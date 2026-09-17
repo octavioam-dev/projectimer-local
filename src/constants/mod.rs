@@ -2,6 +2,15 @@
 //                                   APP CONSTANTS
 // =================================================================================
 pub const CLOCK_WINDOW_DIMENSIONS: Dimensions = Dimensions {width: 300f64, height: 430f64};
+pub const MANAGER_WINDOW_DIMENSIONS: Dimensions = Dimensions {width: 850f64, height: 540f64};
+
+
+
+
+// =================================================================================
+//                                COLORS AND STYLE
+// =================================================================================
+pub const TIMER_ACCENT: &str = "#F2A93B";
 
 
 

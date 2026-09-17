@@ -17,7 +17,8 @@ use dioxus::html::SerializedHtmlEventConverter;
 use dioxus::prelude::*;
 
 use crate::backend::data::Tag;
-use crate::clock_window::{LAP_SECONDS, ProgressRing};
+use crate::clock_window::{LAP_SECONDS};
+use crate::components::progress_ring::{ProgressRing};
 use crate::components::multiselect::GenericMultiSelect;
 
 fn sample_tags() -> HashSet<Tag> {

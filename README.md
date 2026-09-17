@@ -7,7 +7,7 @@ No, I don't know how long it took to code this thing because I did not have Proj
 ## TODO:
 
 * [ ] Validate that if a client or project or tag is deleted while the clock is running and its trying to save to specifically that client/project, we cancel the saving.
-* [ ] Add Manager Window and the button to open it from clockwindow
+* [ ] Closing any window does not quit the program
 * [ ] Add local "log-in"
 
 ## Development Logs
@@ -27,6 +27,10 @@ No, I don't know how long it took to code this thing because I did not have Proj
 * [x] No editing inputs while clock is running
 
 * [x] No refreshing clients/projects/tags while clock is running
+
+* 0.1.0 -
+
+* [x] Add Manager Window and the button to open it from clockwindow
 
 ## Future Features
 
