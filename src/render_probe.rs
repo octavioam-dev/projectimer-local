@@ -17,6 +17,7 @@ use dioxus::html::SerializedHtmlEventConverter;
 use dioxus::prelude::*;
 
 use crate::backend::data::Tag;
+use crate::clock_window::ProgressRing;
 use crate::components::multiselect::GenericMultiSelect;
 
 fn sample_tags() -> HashSet<Tag> {
@@ -98,7 +99,151 @@ fn first_option_id(initial: &Mutations) -> Option<ElementId> {
         })
 }
 
-/// The app refetches tags on window focus and prunes selections that no longer exist. That write
+/// Replicates the ClockWindow timer + ring progress arc and drives it with REAL tokio time to
+/// pin down whether `elapsed_seconds` advances and `stroke-dashoffset` actually shrinks each
+/// second (i.e. the outer ring fills up and would reset every lap).
+mod timer_probe {
+    use super::*;
+
+    thread_local! {
+        static ELAPSED: std::cell::RefCell<Option<Signal<u64>>> = std::cell::RefCell::new(None);
+    }
+
+    #[component]
+    fn TimerRingProbe() -> Element {
+        let mut is_running = use_signal(|| true);
+        let mut elapsed = use_signal(|| 0u64);
+        ELAPSED.with(|slot| *slot.borrow_mut() = Some(elapsed));
+
+        use_future(move || async move {
+            loop {
+                tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+                if is_running() {
+                    elapsed.set(elapsed() + 1);
+                }
+            }
+        });
+
+        let circumference = 2.0 * std::f64::consts::PI * 92.0;
+        let lap_seconds = 1800u64;
+        let progress_fraction = (elapsed() % lap_seconds) as f64 / lap_seconds as f64;
+        let dash_offset = circumference * (1.0 - progress_fraction);
+
+        rsx! {
+            circle {
+                "stroke-dasharray": "{circumference}",
+                "stroke-dashoffset": "{dash_offset}",
+            }
+        }
+    }
+
+    #[component]
+    fn RingFillProbe() -> Element {
+        let mut seconds = use_signal(|| 0u64);
+        ELAPSED.with(|slot| *slot.borrow_mut() = Some(seconds));
+        rsx! { ProgressRing { elapsed_seconds: seconds } }
+    }
+
+fn latest_dashoffset(mutations: &Mutations) -> f64 {
+    mutations
+        .edits
+        .iter()
+        .filter_map(|m| {
+            if let Mutation::SetAttribute {
+                name: "stroke-dashoffset",
+                value: dioxus::core::AttributeValue::Text(v),
+                ..
+            } = m
+            {
+                v.parse().ok()
+            } else {
+                None
+            }
+        })
+        .last()
+        .expect("no stroke-dashoffset edit emitted")
+}
+
+    #[test]
+    fn real_progress_ring_fills_up_and_resets_every_lap() {
+        let mut dom = VirtualDom::new(RingFillProbe);
+        let base_text = dom.rebuild_to_vec();
+
+        let mut seconds = ELAPSED.with(|slot| slot.borrow_mut().take().unwrap());
+        let circumf = 2.0 * std::f64::consts::PI * 92.0;
+
+        let offset_at_zero = *seconds.peek();
+        let d0 = latest_dashoffset(&base_text);
+        assert!((d0 - circumf).abs() < 0.01, "lap start should be empty (offset={d0})");
+
+        seconds.set(900);
+        let half_text = dom.render_immediate_to_vec();
+        let d1 = latest_dashoffset(&half_text);
+        assert!(d1 < d0, "mid-lap offset should shrink (got {d1} vs {d0})");
+
+        seconds.set(1799);
+        let near_text = dom.render_immediate_to_vec();
+        let d2 = latest_dashoffset(&near_text);
+        assert!(d2 < d1, "offset should keep shrinking (got {d2} vs {d1})");
+
+        seconds.set(1800);
+        let wrapped_text = dom.render_immediate_to_vec();
+        let d3 = latest_dashoffset(&wrapped_text);
+        assert!(
+            (d3 - d0).abs() < 0.01,
+            "ring should RESET every 30 min lap (got {d3} vs {d0})"
+        );
+        assert_eq!(offset_at_zero, 0);
+    }
+
+    #[test]
+    fn timer_ticks_and_ring_fills() {
+        let mut dom = VirtualDom::new(TimerRingProbe);
+        dom.rebuild_to_vec();
+        let elapsed = ELAPSED.with(|slot| slot.borrow_mut().take().unwrap());
+
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let offsets: Vec<String> = rt.block_on(async {
+            let mut offsets = Vec::new();
+            for _ in 0..6 {
+                tokio::time::sleep(std::time::Duration::from_millis(450)).await;
+                let mutations = dom.render_immediate_to_vec();
+                for m in mutations.edits {
+                    if let Mutation::SetAttribute {
+                        name: "stroke-dashoffset",
+                        value: dioxus::core::AttributeValue::Text(v),
+                        ..
+                    } = m
+                    {
+                        offsets.push(v.clone());
+                    }
+                }
+            }
+            offsets
+        });
+
+        assert!(
+            *elapsed.peek() >= 2,
+            "timer should have ticked ~several times, got elapsed={}",
+            *elapsed.peek()
+        );
+        assert!(
+            offsets.len() >= 2,
+            "ring should re-render with a new stroke-dashoffset each tick, got {offsets:?}"
+        );
+        let parsed: Vec<f64> = offsets
+            .iter()
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        assert!(
+            parsed.len() >= 2 && parsed.first().unwrap() > parsed.last().unwrap(),
+            "stroke-dashoffset should DECREASE as the ring fills, got {offsets:?}"
+        );
+    }
+}
 /// to the external signal must be reflected in the widget AND must never be undone by the widget's
 /// own sync effect.
 #[test]

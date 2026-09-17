@@ -2,6 +2,8 @@
 
 A Local, Open-Source app to track development time for more accurate client billing. Designed to tackle what some AppStore apps require payment to achieve, all free.
 
+No, I don't know how long it took to code this thing because I did not have ProjecTimer yet.
+
 ## TODO:
 
 * [ ] No editing inputs while clock is running

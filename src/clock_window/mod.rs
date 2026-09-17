@@ -27,8 +27,68 @@ fn format_elapsed(total_seconds: u64) -> String {
 }
 
 #[component]
+pub fn ProgressRing(elapsed_seconds: ReadSignal<u64>) -> Element {
+    let elapsed_seconds = elapsed_seconds();
+
+    let box_radius = 100f64;
+    let radius = 0.92 * box_radius;
+    let circumference = 2.0 * std::f64::consts::PI * radius;
+    let laps_completed = (elapsed_seconds / LAP_SECONDS).min(TOTAL_TICKS);
+    let progress_fraction = (elapsed_seconds % LAP_SECONDS) as f64 / LAP_SECONDS as f64;
+    let dash_offset = circumference * (1.0 - progress_fraction);
+    let track_color = "var(--color-border)";
+
+    let tick_positions: Vec<(f64, f64, bool)> = (0..TOTAL_TICKS)
+        .map(|i| {
+            let angle_deg = i as f64 * (360.0 / TOTAL_TICKS as f64);
+            let angle_rad = (angle_deg - 90.0).to_radians();
+            let tick_radius = 0.79 * radius;
+            let x = box_radius + tick_radius * angle_rad.cos();
+            let y = box_radius + tick_radius * angle_rad.sin();
+            (x, y, i < laps_completed)
+        })
+        .collect();
+
+    rsx! {
+        svg {
+            width: "{2.*box_radius}",
+            height: "{2.*box_radius}",
+            view_box: "0 0 {2.*box_radius} {2.*box_radius}",
+
+            circle {
+                cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
+                fill: "none",
+                stroke: "{track_color}",
+                stroke_width: "6",
+            }
+            circle {
+                cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
+                fill: "none",
+                stroke: "{TIMER_ACCENT}",
+                stroke_width: "6",
+                stroke_linecap: "round",
+                stroke_dasharray: "{circumference}",
+                stroke_dashoffset: "{dash_offset}",
+                transform: "rotate(-90 {box_radius} {box_radius})",
+                style: "transition: stroke-dashoffset 1s linear;",
+            }
+            for (x, y, lit) in tick_positions.iter() {
+                circle {
+                    cx: "{x}", cy: "{y}", r: "3.5",
+                    fill: if *lit { TIMER_ACCENT } else { track_color },
+                }
+            }
+        }
+    }
+}
+
+#[component]
 pub fn ClockWindow() -> Element {
     let mut count = use_signal(|| 0);
+
+    // ---------------------------------------------------------------------------
+    //                          CLIENTS AND PROJECTS
+    // ---------------------------------------------------------------------------
 
     let mut selected_client: Signal<Option<Client>> = use_signal(|| None);
     let mut selected_project: Signal<Option<Project>> = use_signal(|| None);
@@ -165,6 +225,10 @@ pub fn ClockWindow() -> Element {
         }
     });
 
+    // ---------------------------------------------------------------------------
+    //                             CLOCK LOGIC
+    // ---------------------------------------------------------------------------
+
     let mut is_running = use_signal(|| false);
     let mut elapsed_seconds = use_signal(|| 0u64);
 
@@ -191,26 +255,6 @@ pub fn ClockWindow() -> Element {
         }
     };
 
-    // --- Ring + tick geometry ---
-    let box_radius = 100f64;
-    let radius = 0.92*box_radius;
-    let circumference = 2.0 * std::f64::consts::PI * radius;
-    let laps_completed = (elapsed_seconds() / LAP_SECONDS).min(TOTAL_TICKS);
-    let progress_fraction = (elapsed_seconds() % LAP_SECONDS) as f64 / LAP_SECONDS as f64;
-    let dash_offset = circumference * (1.0 - progress_fraction);
-    let track_color = "var(--color-border)";
-
-    let tick_positions: Vec<(f64, f64, bool)> = (0..TOTAL_TICKS)
-        .map(|i| {
-            let angle_deg = i as f64 * (360.0 / TOTAL_TICKS as f64);
-            let angle_rad = (angle_deg - 90.0).to_radians();
-            let tick_radius = 0.79*radius;
-            let x = box_radius + tick_radius * angle_rad.cos();
-            let y = box_radius + tick_radius * angle_rad.sin();
-            (x, y, i < laps_completed)
-        })
-        .collect();
-
     let button_style = if is_disabled {
         "background-color: var(--color-muted);".to_string()
     } else if is_running() {
@@ -229,6 +273,10 @@ pub fn ClockWindow() -> Element {
         "relative flex items-center justify-center rounded-full transition-all duration-200 hover:brightness-105 active:scale-[0.97] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     };
 
+    // ---------------------------------------------------------------------------
+    //                                 UI STACK
+    // ---------------------------------------------------------------------------
+
     rsx! {
         div { class: "flex flex-col w-[{CLOCK_WINDOW_DIMENSIONS.width}px] h-[{CLOCK_WINDOW_DIMENSIONS.height}px] bg-background px-6 py-6 gap-3 overflow-hidden",
 
@@ -237,36 +285,8 @@ pub fn ClockWindow() -> Element {
             }
 
             div { class: "flex-1 flex flex-col items-center justify-center gap-3",
-                div { class: "relative", style: "width: {2.*box_radius}px; height: {2.*box_radius}px;",
-                    svg {
-                        width: "{2.*box_radius}",
-                        height: "{2.*box_radius}",
-                        view_box: "0 0 {2.*box_radius} {2.*box_radius}",
-
-                        circle {
-                            cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
-                            fill: "none",
-                            stroke: "{track_color}",
-                            stroke_width: "6",
-                        }
-                        circle {
-                            cx: "{box_radius}", cy: "{box_radius}", r: "{radius}",
-                            fill: "none",
-                            stroke: "{TIMER_ACCENT}",
-                            stroke_width: "6",
-                            stroke_linecap: "round",
-                            stroke_dasharray: "{circumference}",
-                            stroke_dashoffset: "{dash_offset}",
-                            transform: "rotate(-90 90 90)",
-                            style: "transition: stroke-dashoffset 1s linear;",
-                        }
-                        for (x, y, lit) in tick_positions.iter() {
-                            circle {
-                                cx: "{x}", cy: "{y}", r: "3.5",
-                                fill: if *lit { TIMER_ACCENT } else { track_color },
-                            }
-                        }
-                    }
+                div { class: "relative", style: "width: 200px; height: 200px;",
+                    ProgressRing { elapsed_seconds: elapsed_seconds }
 
                     div { class: "absolute inset-0 flex items-center justify-center",
                         button {
