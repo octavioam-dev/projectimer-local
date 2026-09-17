@@ -6,7 +6,6 @@ No, I don't know how long it took to code this thing because I did not have Proj
 
 ## TODO:
 
-* [x] No editing inputs while clock is running
 * [ ] No refreshing clients/projects/tags while clock is running
 * [ ] Add Manager Window and the button to open it from clockwindow
 * [ ] Add local "log-in"
@@ -24,6 +23,8 @@ No, I don't know how long it took to code this thing because I did not have Proj
 * [x] README Update and tags popover fix
 
 * [x] Only one popover input on clockwindow open at a time
+
+* [x] No editing inputs while clock is running
 
 ## Future Features
 

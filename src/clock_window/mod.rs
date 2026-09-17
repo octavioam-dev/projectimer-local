@@ -12,7 +12,7 @@ use crate::ui::button::Button;
 use crate::constants::CLOCK_WINDOW_DIMENSIONS;
 
 const TIMER_ACCENT: &str = "#F2A93B";
-const LAP_SECONDS: u64 = 1800;
+const LAP_SECONDS: u64 = 10;
 const TOTAL_TICKS: u64 = 12;
 
 fn format_elapsed(total_seconds: u64) -> String {
@@ -42,7 +42,7 @@ pub fn ProgressRing(elapsed_seconds: ReadSignal<u64>) -> Element {
         .map(|i| {
             let angle_deg = i as f64 * (360.0 / TOTAL_TICKS as f64);
             let angle_rad = (angle_deg - 90.0).to_radians();
-            let tick_radius = 0.79 * radius;
+            let tick_radius = 0.83 * radius;
             let x = box_radius + tick_radius * angle_rad.cos();
             let y = box_radius + tick_radius * angle_rad.sin();
             (x, y, i < laps_completed)
