@@ -17,7 +17,7 @@ use dioxus::html::SerializedHtmlEventConverter;
 use dioxus::prelude::*;
 
 use crate::backend::data::Tag;
-use crate::clock_window::ProgressRing;
+use crate::clock_window::{LAP_SECONDS, ProgressRing};
 use crate::components::multiselect::GenericMultiSelect;
 
 fn sample_tags() -> HashSet<Tag> {
@@ -164,6 +164,26 @@ fn latest_dashoffset(mutations: &Mutations) -> f64 {
         .expect("no stroke-dashoffset edit emitted")
 }
 
+    fn latest_style(mutations: &Mutations) -> String {
+        mutations
+            .edits
+            .iter()
+            .filter_map(|m| {
+                if let Mutation::SetAttribute {
+                    name: "style",
+                    value: dioxus::core::AttributeValue::Text(v),
+                    ..
+                } = m
+                {
+                    Some(v.clone())
+                } else {
+                    None
+                }
+            })
+            .last()
+            .unwrap_or_default()
+    }
+
     #[test]
     fn real_progress_ring_fills_up_and_resets_every_lap() {
         let mut dom = VirtualDom::new(RingFillProbe);
@@ -172,28 +192,52 @@ fn latest_dashoffset(mutations: &Mutations) -> f64 {
         let mut seconds = ELAPSED.with(|slot| slot.borrow_mut().take().unwrap());
         let circumf = 2.0 * std::f64::consts::PI * 92.0;
 
-        let offset_at_zero = *seconds.peek();
         let d0 = latest_dashoffset(&base_text);
         assert!((d0 - circumf).abs() < 0.01, "lap start should be empty (offset={d0})");
 
-        seconds.set(900);
-        let half_text = dom.render_immediate_to_vec();
-        let d1 = latest_dashoffset(&half_text);
-        assert!(d1 < d0, "mid-lap offset should shrink (got {d1} vs {d0})");
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let (offsets, styles): (Vec<f64>, Vec<String>) = rt.block_on(async {
+            let mut offsets = Vec::new();
+            let mut styles = Vec::new();
+            for target in [1u64, LAP_SECONDS / 4, LAP_SECONDS - 1, LAP_SECONDS] {
+                seconds.set(target);
+                tokio::time::sleep(std::time::Duration::from_millis(15)).await;
+                let frame = dom.render_immediate_to_vec();
+                offsets.push(latest_dashoffset(&frame));
+                styles.push(latest_style(&frame));
+            }
+            (offsets, styles)
+        });
 
-        seconds.set(1799);
-        let near_text = dom.render_immediate_to_vec();
-        let d2 = latest_dashoffset(&near_text);
-        assert!(d2 < d1, "offset should keep shrinking (got {d2} vs {d1})");
-
-        seconds.set(1800);
-        let wrapped_text = dom.render_immediate_to_vec();
-        let d3 = latest_dashoffset(&wrapped_text);
         assert!(
-            (d3 - d0).abs() < 0.01,
-            "ring should RESET every 30 min lap (got {d3} vs {d0})"
+            offsets.len() == 4,
+            "expected one offset per frame, got {offsets:?}"
         );
-        assert_eq!(offset_at_zero, 0);
+        assert!(
+            offsets[0] < d0 && offsets[0] > d0 * 0.5,
+            "first tick should start filling (got {offsets:?})"
+        );
+        assert!(
+            offsets[1] < offsets[0] && offsets[2] < offsets[1],
+            "offset should keep shrinking while counting (got {offsets:?})"
+        );
+        assert!(
+            styles[0].contains("transition"),
+            "while progressing the ring should keep its 1s fill transition (got {styles:?})"
+        );
+        let last = offsets.last().unwrap();
+        assert!(
+            (last - d0).abs() < 0.01,
+            "ring should RESET to a fresh lap at LAP_SECONDS (got {last} vs {d0})"
+        );
+        assert_eq!(
+            styles.last().unwrap(),
+            "",
+            "reset to a new cycle must be instant (no backwards transition)"
+        );
     }
 
     #[test]

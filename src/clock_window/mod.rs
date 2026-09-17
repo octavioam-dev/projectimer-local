@@ -12,7 +12,7 @@ use crate::ui::button::Button;
 use crate::constants::CLOCK_WINDOW_DIMENSIONS;
 
 const TIMER_ACCENT: &str = "#F2A93B";
-const LAP_SECONDS: u64 = 10;
+pub(crate) const LAP_SECONDS: u64 = 1800;
 const TOTAL_TICKS: u64 = 12;
 
 fn format_elapsed(total_seconds: u64) -> String {
@@ -35,8 +35,10 @@ pub fn ProgressRing(elapsed_seconds: ReadSignal<u64>) -> Element {
     let circumference = 2.0 * std::f64::consts::PI * radius;
     let laps_completed = (elapsed_seconds / LAP_SECONDS).min(TOTAL_TICKS);
     let progress_fraction = (elapsed_seconds % LAP_SECONDS) as f64 / LAP_SECONDS as f64;
+    //if progress_fraction == 0.0 && elapsed_seconds != 0 {progress_fraction = 1.0};
     let dash_offset = circumference * (1.0 - progress_fraction);
     let track_color = "var(--color-border)";
+    //let animates = elapsed_seconds % LAP_SECONDS != 0;
 
     let tick_positions: Vec<(f64, f64, bool)> = (0..TOTAL_TICKS)
         .map(|i| {
@@ -70,7 +72,7 @@ pub fn ProgressRing(elapsed_seconds: ReadSignal<u64>) -> Element {
                 stroke_dasharray: "{circumference}",
                 stroke_dashoffset: "{dash_offset}",
                 transform: "rotate(-90 {box_radius} {box_radius})",
-                style: "transition: stroke-dashoffset 1s linear;",
+                style: "" //"transition: stroke-dashoffset 1s linear;"
             }
             for (x, y, lit) in tick_positions.iter() {
                 circle {
