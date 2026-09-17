@@ -314,13 +314,14 @@ pub fn ClockWindow() -> Element {
                     placeholder: "Client".to_string(),
                     selected_item: selected_client,
                     trigger_class: "flex-1 min-w-0",
+                    disabled: is_running(),
                 }
                 GenericCombobox::<Project> {
                     data: projects,
                     placeholder: "Project".to_string(),
                     selected_item: selected_project,
                     trigger_class: "flex-1 min-w-0",
-                    disabled: selected_client().is_none(),
+                    disabled: selected_client().is_none() || is_running(),
                 }
             }
             div { class: "flex gap-2 w-full",
